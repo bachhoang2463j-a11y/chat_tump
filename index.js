@@ -1952,6 +1952,37 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     if (root) updateRangeButtons(root);
   }
 
+  /**
+   * 区间重建楼层后补发楼层渲染事件。
+   *
+   * addOneMessage 不走酒馆正常渲染管线（不发任何事件），而渲染类扩展
+   * （如酒馆助手 JS-Slash-Runner）完全靠 USER/CHARACTER_MESSAGE_RENDERED
+   * 事件驱动 iframe 挂载：不发事件时，其内部 runtime 记录仍指向已被
+   * replaceChildren 销毁的旧 DOM 节点，楼层内的前端组件（iframe）不会
+   * 被重建，用户会看到裸露的代码块。
+   * 楼层级事件的处理逻辑会先剔除该楼层的失效 runtime 再重扫 DOM，
+   * 因此逐楼补发即可恢复 iframe 渲染（与正常打印楼层时的行为一致）。
+   *
+   * @param {Array<{is_user?: boolean}>} chat
+   * @param {number} start
+   * @param {number} end
+   */
+  function notifyFloorsRendered(chat, start, end) {
+    const ctx = window.SillyTavern?.getContext?.();
+    const eventSource = ctx?.eventSource;
+    const types = ctx?.eventTypes;
+    if (!eventSource || !types?.USER_MESSAGE_RENDERED || !types?.CHARACTER_MESSAGE_RENDERED) return;
+
+    for (let i = start; i <= end; i++) {
+      const type = chat[i]?.is_user ? types.USER_MESSAGE_RENDERED : types.CHARACTER_MESSAGE_RENDERED;
+      try {
+        void eventSource.emit(type, i);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   function parseRangeInput(raw, maxId) {
     if (typeof raw !== 'string') return null;
     const trimmed = raw.trim().replace(/\s+/g, '');
@@ -2041,6 +2072,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     for (let i = range.start; i <= range.end; i++) {
       ctx.addOneMessage(chat[i], { forceId: i });
     }
+    notifyFloorsRendered(chat, range.start, range.end);
 
     setActiveRange(range);
 
@@ -2195,6 +2227,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     for (let i = newStart; i <= newEnd; i++) {
       ctx.addOneMessage(chat[i], { forceId: i });
     }
+    notifyFloorsRendered(chat, newStart, newEnd);
 
     const range = { start: newStart, end: newEnd };
     setActiveRange(range);
