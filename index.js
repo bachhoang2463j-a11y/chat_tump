@@ -4758,6 +4758,25 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     persistRootPosition(root, left, top);
   }
 
+  /**
+   * 面板垂直居中：直接计算像素 top。
+   * 不用 CSS 的 top:50%+translateY 或 top/bottom+margin:auto——部分移动端
+   * WebView 对 fixed 元素的这两种居中方式解析异常（面板会跑出视口）。
+   */
+  function centerBallPanelVertically(root) {
+    const panel = root.querySelector('.stcj-panel');
+    if (!panel) return;
+
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    // 先清掉旧值再量实际高度
+    panel.style.top = '';
+    const h = panel.offsetHeight;
+    if (!vh || !h) return;
+
+    const top = Math.max(8, Math.round((vh - h) / 2));
+    panel.style.top = `${top}px`;
+  }
+
   function toggleCollapse() {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
@@ -4766,7 +4785,11 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     if (settings.collapsed) {
       root.classList.toggle('stcj-expanded');
       updateCollapseToggleButton(root);
-      if (!root.classList.contains('stcj-expanded')) closeFavPanel();
+      if (root.classList.contains('stcj-expanded')) {
+        centerBallPanelVertically(root);
+      } else {
+        closeFavPanel();
+      }
       return;
     }
 
