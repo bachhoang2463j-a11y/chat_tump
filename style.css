@@ -4,43 +4,39 @@
   --stcj-scale: 1;
   position: fixed;
   z-index: 999999;
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  padding: 2px;
+  display: block;
+  padding: 0;
 
-  background: rgba(30, 30, 30, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  transform: scale(var(--stcj-scale));
+  /* 悬浮球形态：root 即球容器，保持可捕获的方形尺寸（无 transform，
+     避免 root 成为 fixed 后代面板的包含块） */
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
   transform-origin: top left;
 
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  transition: opacity 0.2s, transform 0.15s ease;
 }
 
-#stcj-root.stcj-drag-arming {
-  background: rgba(42, 42, 42, 0.8);
+#stcj-root.stcj-drag-arming > .stcj-btn.stcj-collapse {
   border-color: rgba(165, 216, 255, 0.28);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.35),
     0 0 0 1px rgba(165, 216, 255, 0.12),
     0 0 18px rgba(165, 216, 255, 0.12);
-  animation: stcjDragArmingPulse 0.9s ease-in-out infinite;
 }
 
 #stcj-root.stcj-drag-arming .stcj-btn {
   background: rgba(255, 255, 255, 0.08);
 }
 
-#stcj-root.stcj-dragging {
+#stcj-root.stcj-dragging > .stcj-btn.stcj-collapse {
   opacity: 0.92;
-  background: rgba(42, 42, 42, 0.82);
+  background: rgba(42, 42, 42, 0.92);
   border-color: rgba(165, 216, 255, 0.34);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.35),
@@ -61,6 +57,11 @@
   50% {
     transform: scale(calc(var(--stcj-scale) * 1.02));
   }
+}
+
+/* 长按预备动画作用于球按钮（root 无 transform） */
+#stcj-root.stcj-drag-arming > .stcj-btn.stcj-collapse {
+  animation: stcjDragArmingPulse 0.9s ease-in-out infinite;
 }
 
 #stcj-root.stcj-horizontal {
@@ -176,131 +177,6 @@
 /* 收起状态 */
 #stcj-root.stcj-collapsed .stcj-pin-group {
   display: none;
-}
-
-/* ===== 迷你悬浮球收起态（可被悬浮球收纳捕获：fixed + 44px + 1:1） ===== */
-#stcj-root.stcj-collapsed {
-  display: block;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  overflow: visible;
-}
-
-#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(30, 30, 30, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  display: grid;
-  place-items: center;
-  transition:
-    transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
-    box-shadow 0.2s ease,
-    background 0.2s ease;
-}
-
-#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse svg {
-  width: 20px;
-  height: 20px;
-  opacity: 0.95;
-}
-
-#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse:hover {
-  transform: scale(1.08);
-  background: rgba(48, 48, 48, 0.92);
-  box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse:active {
-  transform: scale(0.94);
-}
-
-/* ===== 展开面板：fixed 定位在悬浮球左侧，不影响球本身尺寸/位置 =====
-   面板展开时会移到 body 下（root 带 transform，会破坏 fixed 定位），
-   因此用全局 .stcj-panel 选择器 + JS 同步的形态 class。 */
-#stcj-root:not(.stcj-collapsed) > .stcj-btn.stcj-collapse {
-  display: none;
-}
-
-.stcj-panel {
-  position: fixed;
-  z-index: 999998;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 6px;
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  transform-origin: right center;
-  max-height: calc(100vh - 24px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.stcj-panel.stcj-panel-horizontal {
-  flex-direction: row;
-  align-items: center;
-  transform-origin: center bottom;
-  max-height: none;
-  max-width: calc(100vw - 24px);
-}
-
-.stcj-panel.stcj-panel-open {
-  display: flex;
-  animation: stcjPanelPop 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* 面板内按钮始终可见（面板自身控制 display） */
-.stcj-panel .stcj-btn,
-.stcj-panel .stcj-pin-group .stcj-btn {
-  display: grid;
-}
-
-.stcj-panel .stcj-pin-group {
-  display: flex;
-}
-
-/* 面板顶部的收起按钮 */
-.stcj-panel .stcj-btn.stcj-collapse {
-  display: grid;
-  position: static;
-  width: 28px;
-  height: 28px;
-}
-
-.stcj-panel .stcj-btn.stcj-collapse svg {
-  width: 14px;
-  height: 14px;
-}
-
-/* 展开态弹出动画 */
-@keyframes stcjPanelPop {
-  from {
-    opacity: 0;
-    transform: scale(0.85) translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateX(0);
-  }
 }
 
 /* 交互状态 */
@@ -758,11 +634,98 @@
   color: #ff5252;
 }
 
-/* 收起状态只显示悬浮球（按钮在 .stcj-panel 内，由面板自身控制显隐） */
-#stcj-root.stcj-collapsed > .stcj-btn:not(.stcj-collapse),
-#stcj-root.stcj-collapsed > .stcj-pin-group {
+/* 收起状态只显示收起按钮 */
+#stcj-root.stcj-collapsed .stcj-btn:not(.stcj-collapse) {
   display: none;
 }
+
+/* ===== 悬浮球形态：root = 44px 圆球，按钮栏整体为右缘弹出面板 ===== */
+
+/* 球按钮：撑满 root，圆形 */
+#stcj-root.stcj-collapsed > .stcj-btn.stcj-collapse {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(30, 30, 30, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: scale(var(--stcj-scale));
+  display: grid;
+  place-items: center;
+}
+
+#stcj-root.stcj-collapsed > .stcj-btn.stcj-collapse svg {
+  width: 20px;
+  height: 20px;
+}
+
+#stcj-root.stcj-collapsed > .stcj-btn.stcj-collapse:hover {
+  background: rgba(48, 48, 48, 0.92);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* 面板：原版按钮栏原样作为面板，fixed 于屏幕右缘中部，滑入/滑出 */
+#stcj-root .stcj-panel {
+  position: fixed;
+  right: 10px;
+  top: 50%;
+  z-index: 999998;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px;
+  background: rgba(30, 30, 30, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  transform: translateY(-50%) translateX(calc(100% + 24px));
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  opacity: 0;
+  transition:
+    transform 0.22s cubic-bezier(0.25, 0.8, 0.25, 1),
+    opacity 0.22s ease;
+}
+
+#stcj-root.stcj-horizontal .stcj-panel {
+  flex-direction: row;
+  max-height: none;
+  max-width: calc(100vw - 24px);
+}
+
+/* 面板展开：贴右缘滑入；面板内原版按钮全部可见 */
+#stcj-root.stcj-expanded .stcj-panel {
+  display: flex;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+  opacity: 1;
+}
+
+#stcj-root.stcj-expanded .stcj-panel .stcj-btn:not(.stcj-collapse) {
+  display: grid;
+}
+
+#stcj-root.stcj-expanded .stcj-panel .stcj-pin-group {
+  display: flex;
+}
+
+/* 面板顶部收起按钮 */
+#stcj-root .stcj-panel > .stcj-btn.stcj-collapse {
+  width: 28px;
+  height: 28px;
+  align-self: center;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   #stcj-root .stcj-btn {
@@ -826,9 +789,8 @@ body.stcj-pin-mode #stcj-root .stcj-btn.stcj-pin {
   cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>') 12 24, pointer;
 }
 
-/* ===== 按钮可见性控制（设置面板）；面板在 body 下，需同时覆盖全局 ===== */
-#stcj-root .stcj-settings-hidden,
-.stcj-panel .stcj-settings-hidden {
+/* ===== 按钮可见性控制（设置面板） ===== */
+#stcj-root .stcj-settings-hidden {
   display: none !important;
 }
 
