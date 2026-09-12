@@ -65,7 +65,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
    * group: 如果为 true，表示这是一个按钮组（包含多个 DOM 元素）
    */
   const CONFIGURABLE_BUTTONS = [
-    { id: 'toggleCollapse',    label: '收起/展开',          defaultEnabled: true, order: 0 },
+    { id: 'toggleCollapse',    label: '悬浮球（展开/收起面板）', defaultEnabled: true, order: 0 },
     { id: 'recent3',           label: '最近第3楼',          defaultEnabled: true, order: 1 },
     { id: 'recent2',           label: '最近第2楼',          defaultEnabled: true, order: 2 },
     { id: 'recent1',           label: '最近第1楼',          defaultEnabled: true, order: 3 },
@@ -978,7 +978,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function getQuickEditButton(root) {
-    return root?.querySelector?.('.stcj-btn[data-action="quickEdit"]') || null;
+    return getBallPanel(root)?.querySelector?.('.stcj-btn[data-action="quickEdit"]') || null;
   }
 
   function updateQuickEditButton(root) {
@@ -1866,15 +1866,17 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateRangeButtons(root) {
-    const rangeBtn = root.querySelector('.stcj-btn[data-action="showRange"]');
-    const resetBtn = root.querySelector('.stcj-btn[data-action="resetRange"]');
-    const editBtn = root.querySelector('.stcj-range-chip-main[data-action="editRange"]');
-    const rangePrevBtn = root.querySelector('.stcj-btn[data-action="rangePrev"]');
-    const rangeNextBtn = root.querySelector('.stcj-btn[data-action="rangeNext"]');
-    const rangeStack = root.querySelector('.stcj-range-stack');
-    const rangeChip = root.querySelector('.stcj-range-chip');
-    const rangeLabel = root.querySelector('.stcj-range-chip-label');
-    const rangeValue = root.querySelector('.stcj-range-chip-value');
+    // 面板常驻 body 下（transform 包含块问题），面板内元素从面板查
+    const scope = getBallPanel(root) || root;
+    const rangeBtn = scope.querySelector('.stcj-btn[data-action="showRange"]');
+    const resetBtn = scope.querySelector('.stcj-btn[data-action="resetRange"]');
+    const editBtn = scope.querySelector('.stcj-range-chip-main[data-action="editRange"]');
+    const rangePrevBtn = scope.querySelector('.stcj-btn[data-action="rangePrev"]');
+    const rangeNextBtn = scope.querySelector('.stcj-btn[data-action="rangeNext"]');
+    const rangeStack = scope.querySelector('.stcj-range-stack');
+    const rangeChip = scope.querySelector('.stcj-range-chip');
+    const rangeLabel = scope.querySelector('.stcj-range-chip-label');
+    const rangeValue = scope.querySelector('.stcj-range-chip-value');
     const isActive = !!activeRange;
     const currentText = formatRangeText(activeRange);
 
@@ -2346,7 +2348,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateOrientationToggleButton(root) {
-    const btn = root.querySelector('.stcj-btn[data-action="toggleOrientation"]');
+    const btn = (getBallPanel(root) || root).querySelector('.stcj-btn[data-action="toggleOrientation"]');
     if (!btn) return;
 
     const isHorizontal = settings.orientation === 'horizontal';
@@ -2355,17 +2357,36 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateCollapseToggleButton(root) {
-    const btn = root.querySelector('.stcj-btn[data-action="toggleCollapse"]');
-    if (!btn) return;
+    const btns = [
+      ...root.querySelectorAll('.stcj-btn[data-action="toggleCollapse"]'),
+      ...document.querySelectorAll('body > .stcj-panel .stcj-btn[data-action="toggleCollapse"]'),
+    ];
+    if (!btns.length) return;
 
-    const collapsed = !!settings.collapsed;
-    setIcon(btn, collapsed ? 'plus' : 'minus');
-    btn.title = collapsed ? '展开跳转栏' : '收起跳转栏';
+    if (settings.collapsed) {
+      const expanded = root.classList.contains('stcj-expanded');
+      btns.forEach((btn) => {
+        const inPanel = btn.classList.contains('stcj-panel-close');
+        if (inPanel) {
+          setIcon(btn, 'close');
+          btn.title = '收起面板';
+        } else {
+          setIcon(btn, expanded ? 'chevronRight' : 'range');
+          btn.title = expanded ? '楼层跳转面板（已展开）' : '楼层跳转（点击展开）';
+        }
+      });
+    } else {
+      btns.forEach((btn) => {
+        setIcon(btn, 'minus');
+        btn.title = '收起跳转栏';
+      });
+    }
   }
 
   function updatePrevNextButtons(root) {
-    const prev = root.querySelector('.stcj-btn[data-action="prev"]');
-    const next = root.querySelector('.stcj-btn[data-action="next"]');
+    const scope = getBallPanel(root) || root;
+    const prev = scope.querySelector('.stcj-btn[data-action="prev"]');
+    const next = scope.querySelector('.stcj-btn[data-action="next"]');
     if (!prev || !next) return;
 
     const isVertical = settings.orientation === 'vertical';
@@ -2374,7 +2395,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateFavPanelToggleButton(root) {
-    const btn = root.querySelector('.stcj-btn[data-action="toggleFavPanel"]');
+    const btn = (getBallPanel(root) || root).querySelector('.stcj-btn[data-action="toggleFavPanel"]');
     if (!btn) return;
 
     setIcon(btn, favPanelOpen ? 'chevronDown' : 'chevronRight');
@@ -4111,7 +4132,8 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateFavoritesUI(root) {
-    const managerBtn = root.querySelector('.stcj-btn.stcj-favorites-manager');
+    const scope = getBallPanel(root) || root;
+    const managerBtn = scope.querySelector('.stcj-btn.stcj-favorites-manager');
     if (managerBtn) managerBtn.setAttribute('data-count', String(favoriteItems.length));
 
     root.classList.toggle('stcj-fav-open', favPanelOpen);
@@ -4280,7 +4302,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     const root = document.getElementById(ROOT_ID);
     if (root) {
-      const pinBtn = root.querySelector('.stcj-btn.stcj-pin');
+      const pinBtn = (getBallPanel(root) || root).querySelector('.stcj-btn.stcj-pin');
       pinBtn?.classList.toggle('stcj-pin-active', pinMode);
       updateFavoritesUI(root);
     }
@@ -4302,9 +4324,16 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   function bindRootOutsideClose(root) {
     const onPointerDown = (e) => {
       if (root.contains(e.target)) return;
+      // 弹出面板可能已被移到 body 下，点击面板内不算"外部"
+      const panel = getBallPanel(root);
+      if (panel?.contains(e.target)) return;
       if (document.getElementById(FAVORITES_MODAL_ID)?.contains(e.target)) return;
       if (document.getElementById(FAVORITE_QUICK_MENU_OVERLAY_ID)?.contains(e.target)) return;
       closeFavoriteQuickMenu();
+      // 悬浮球弹出面板时，点击外部收回面板
+      if (settings.collapsed && root.classList.contains('stcj-expanded')) {
+        setBallExpanded(false);
+      }
     };
 
     document.addEventListener('pointerdown', onPointerDown, true);
@@ -4596,14 +4625,20 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   function applyRootPositionFromSettings(root) {
     const { maxLeft, maxTop } = getRootMaxOffsets(root);
 
+    // 位置数据无效判定：旧版长条→悬浮球尺寸突变时，rx/ry/x/y 可能全部被 clamp 成 0
+    //（悬浮球被挤到左上角）。此时视为未放置，回落到默认位置（右侧中部）。
+    const isDegenerate =
+      (settings.rx === 0 && settings.ry === 0 && settings.x === 0 && settings.y === 0) ||
+      (settings.x === null && settings.y === null);
+
     // 优先使用相对位置（rx/ry）
-    if (typeof settings.rx === 'number' && typeof settings.ry === 'number') {
+    if (!isDegenerate && typeof settings.rx === 'number' && typeof settings.ry === 'number') {
       persistRootPosition(root, settings.rx * maxLeft, settings.ry * maxTop);
       return;
     }
 
     // 兼容旧版本：使用像素位置，并转换为相对位置
-    if (typeof settings.x === 'number' && typeof settings.y === 'number') {
+    if (!isDegenerate && typeof settings.x === 'number' && typeof settings.y === 'number') {
       persistRootPosition(root, settings.x, settings.y);
       return;
     }
@@ -4630,11 +4665,15 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
         if (typeof settings.rx === 'number' && typeof settings.ry === 'number') {
           const { maxLeft, maxTop } = getRootMaxOffsets(root);
           persistRootPosition(root, settings.rx * maxLeft, settings.ry * maxTop);
-          return;
+        } else {
+          // 兜底：仅做 clamp
+          clampRootIntoViewport(root);
         }
 
-        // 兜底：仅做 clamp
-        clampRootIntoViewport(root);
+        // 已弹出的面板跟随窗口尺寸重定位
+        if (settings.collapsed && root.classList.contains('stcj-expanded')) {
+          positionBallPanel(root);
+        }
       });
     } catch {
       // 极少数环境不支持 rAF：直接处理
@@ -4734,6 +4773,8 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     const top = parseFloat(root.style.top || '0') || 0;
 
     root.classList.toggle('stcj-collapsed', settings.collapsed);
+    // 收起为悬浮球时，同时收起已弹出的面板
+    if (settings.collapsed) root.classList.remove('stcj-expanded');
     updateCollapseToggleButton(root);
 
     // 收起时关闭收藏面板/点选模式
@@ -4746,8 +4787,112 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     persistRootPosition(root, left, top);
   }
 
+  /**
+   * 取悬浮球弹出面板的 DOM（面板可能仍在 root 内，也可能已被移到 body 下）。
+   */
+  function getBallPanel(root) {
+    return root.querySelector('.stcj-panel') || document.querySelector('body > .stcj-panel');
+  }
+
+  /**
+   * 面板 fixed 定位计算：竖向面板贴在悬浮球左侧（顶部对齐球），
+   * 横向面板贴在悬浮球上方（左对齐球）。空间不足时自动翻转/收窄。
+   *
+   * 注意：root 带 transform: scale()，transform 元素会成为 fixed 后代的包含块，
+   * 因此面板在展开时必须移到 body 下（与 root 平级）才能按视口正确定位。
+   */
+  function positionBallPanel(root) {
+    const panel = getBallPanel(root);
+    if (!panel) return;
+
+    // 把面板移到 body 下（幂等；transform 包含块问题）
+    if (panel.parentNode !== document.body) {
+      document.body.appendChild(panel);
+    }
+
+    // 同步形态 class（CSS 用全局 .stcj-panel 选择器）
+    panel.classList.toggle('stcj-panel-horizontal', root.classList.contains('stcj-horizontal'));
+
+    const ballRect = root.getBoundingClientRect();
+    const isHorizontal = root.classList.contains('stcj-horizontal');
+
+    // 先复位测量（清掉上次定位，避免影响 scrollHeight 等）
+    panel.style.left = '';
+    panel.style.top = '';
+    panel.style.maxHeight = '';
+    panel.style.maxWidth = '';
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (isHorizontal) {
+      // 横向面板：球上方，左对齐；宽度不够则收缩到球下方/自适应
+      const panelW = Math.min(panel.offsetWidth, vw - 24);
+      let left = ballRect.left;
+      if (left + panelW > vw - 8) left = Math.max(8, vw - 8 - panelW);
+      panel.style.left = `${Math.round(left)}px`;
+      panel.style.top = `${Math.round(Math.max(8, ballRect.top - panel.offsetHeight - 10))}px`;
+      if (panel.offsetHeight + 10 > ballRect.top - 8) {
+        // 上方空间不足：放到球下方
+        panel.style.top = `${Math.round(Math.min(vh - 8 - panel.offsetHeight, ballRect.bottom + 10))}px`;
+      }
+      panel.style.maxWidth = `${Math.round(panelW)}px`;
+    } else {
+      // 竖向面板：球左侧，顶对齐球中心偏上；左侧空间不足则放右侧
+      const panelH = Math.min(panel.offsetHeight, vh - 24);
+      const top = Math.round(clamp(ballRect.top + ballRect.height / 2 - 40, 8, Math.max(8, vh - 8 - panelH)));
+      const leftGap = ballRect.left - 8;
+      const panelW = Math.min(panel.offsetWidth, Math.max(180, leftGap));
+      if (leftGap >= 140) {
+        panel.style.left = `${Math.round(Math.max(8, ballRect.left - panel.offsetWidth - 10))}px`;
+      } else {
+        panel.style.left = `${Math.round(Math.min(vw - 8 - panel.offsetWidth, ballRect.right + 10))}px`;
+      }
+      panel.style.top = `${top}px`;
+      panel.style.maxHeight = `${Math.round(vh - 24)}px`;
+    }
+  }
+
+  /**
+   * 悬浮球形态下的面板弹出/收起。
+   * settings.collapsed 保持为 true（悬浮球形态），仅切换 stcj-expanded 类
+   * 控制完整按钮面板从悬浮球左侧弹出/收回，不改动持久化状态。
+   */
+  function setBallExpanded(expanded) {
+    const root = document.getElementById(ROOT_ID);
+    if (!root || !settings.collapsed) return;
+
+    root.classList.toggle('stcj-expanded', !!expanded);
+    updateCollapseToggleButton(root);
+
+    const panel = getBallPanel(root);
+    if (panel) panel.classList.toggle('stcj-panel-open', !!expanded);
+
+    if (expanded && panel) {
+      // 先 display 再定位（需要实际尺寸）
+      positionBallPanel(root);
+    }
+
+    // 收回面板时关闭收藏面板/点选模式
+    if (!expanded) {
+      closeFavPanel();
+    }
+  }
+
+  function isBallExpanded() {
+    const root = document.getElementById(ROOT_ID);
+    return !!root?.classList.contains('stcj-expanded');
+  }
+
   function toggleCollapse() {
-    setCollapsed(!settings.collapsed);
+    // 新版交互：悬浮球是唯一默认形态。
+    // - 旧版"常驻长条"（collapsed=false）统一归一为悬浮球
+    // - 点击悬浮球弹出面板；面板上的收起按钮收回面板
+    if (!settings.collapsed) {
+      setCollapsed(true);
+      return;
+    }
+    setBallExpanded(!isBallExpanded());
   }
 
   function loadGlobalHidden() {
@@ -4895,6 +5040,10 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
           const left = parseFloat(root.style.left || '0') || 0;
           const top = parseFloat(root.style.top || '0') || 0;
           persistRootPosition(root, left, top);
+          // 拖动悬浮球后，让已弹出的面板跟随新位置
+          if (settings.collapsed && root.classList.contains('stcj-expanded')) {
+            positionBallPanel(root);
+          }
         }
       } finally {
         if (wasDragging) suppressButtonActions();
@@ -4927,7 +5076,11 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
   function bindButtons(root) {
     /** @type {NodeListOf<HTMLElement>} */
-    const btns = root.querySelectorAll('.stcj-btn, .stcj-range-chip-main[data-action]');
+    // 面板常驻 body 下，按钮集合 = root 内（悬浮球） + 面板内
+    const btns = [
+      ...root.querySelectorAll('.stcj-btn, .stcj-range-chip-main[data-action]'),
+      ...(getBallPanel(root)?.querySelectorAll('.stcj-btn, .stcj-range-chip-main[data-action]') ?? []),
+    ];
 
     btns.forEach((btn) => {
       // 禁止长按/右键菜单
@@ -4997,9 +5150,10 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       '.stcj-range-stack',
     ];
 
-    // 1) 应用可见性
+    // 1) 应用可见性（面板元素查面板）
+    const visScope = getBallPanel(root) || root;
     for (const [btnId, selector] of Object.entries(BUTTON_DOM_MAP)) {
-      const el = root.querySelector(selector);
+      const el = visScope.querySelector(selector);
       if (!el) continue;
       const cfg = cfgMap.get(btnId);
       const enabled = cfg ? cfg.enabled : true;
@@ -5015,7 +5169,8 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     }
 
     // 2) 按 order 排序：收集所有可排序的元素
-    const favPanel = root.querySelector('.stcj-fav-panel');
+    // 新版结构：功能按钮位于 .stcj-panel 内（悬浮球弹出面板，可能已被移到 body 下），排序也在面板内进行
+    const panel = getBallPanel(root) || root;
 
     // 获取排序后的按钮 ID 列表
     const sortedCfg = [...buttonsCfg].sort((a, b) => a.order - b.order);
@@ -5025,28 +5180,27 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     for (const cfg of sortedCfg) {
       const selector = BUTTON_DOM_MAP[cfg.id];
       if (!selector) continue;
-      const el = root.querySelector(selector);
+      const el = panel.querySelector(selector);
       if (el) sortableElements.push(el);
 
       // showRange：将关联元素紧跟其后
       if (cfg.id === 'showRange') {
         for (const extraSel of RANGE_GROUP_EXTRA) {
-          const extraEl = root.querySelector(extraSel);
+          const extraEl = panel.querySelector(extraSel);
           if (extraEl) sortableElements.push(extraEl);
         }
       }
     }
 
-    // 3) 重新插入：排序后的按钮在前，收藏面板始终放在最后
-    // 先移除所有可排序元素（不移除 favPanel）
+    // 3) 重新插入：排序后的按钮插回面板（面板内顺序），收藏面板保持固定位置
+    // 先移除所有可排序元素
     for (const el of sortableElements) {
-      if (el.parentNode === root) root.removeChild(el);
+      if (el.parentNode === panel) panel.removeChild(el);
     }
 
-    // 在 favPanel 之前插入排序后的按钮（如果 favPanel 存在）
-    const insertBefore = favPanel || null;
+    // 逐个 append 到面板末尾（面板内无其他需保持在后的元素）
     for (const el of sortableElements) {
-      root.insertBefore(el, insertBefore);
+      panel.appendChild(el);
     }
   }
 
@@ -5315,39 +5469,42 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     const root = document.createElement('div');
     root.id = ROOT_ID;
-    root.title = '长按悬浮条即可拖动位置';
+    root.title = '点击展开跳转面板，长按可拖动位置';
     root.className = `stcj-root stcj-${settings.orientation}`;
 
     root.innerHTML = `
-      <div class="stcj-btn stcj-mini stcj-collapse" data-action="toggleCollapse"></div>
-      <div class="stcj-btn" data-action="recent3" title="最近第3楼（跳到头部）">${ICONS.num(3)}</div>
-      <div class="stcj-btn" data-action="recent2" title="最近第2楼（跳到头部）">${ICONS.num(2)}</div>
-      <div class="stcj-btn" data-action="recent1" title="最近第1楼（跳到头部）">${ICONS.num(1)}</div>
-      <div class="stcj-btn" data-action="quickPage" title="快速翻页(右)：点击最新楼层的右翻页按钮">${ICONS.fastForward}</div>
-      <div class="stcj-btn" data-action="quickPageLeft" title="快速翻页(左)：点击最新楼层的左翻页按钮">${ICONS.fastBackward}</div>
-      <div class="stcj-btn" data-action="showRange" title="跳转/区间显示（输入楼层号或区间）">${ICONS.range}</div>
-      <div class="stcj-range-stack stcj-hidden" aria-hidden="true">
-        <div class="stcj-range-chip" aria-live="polite" aria-hidden="true">
-          <div class="stcj-btn stcj-mini stcj-range-nav" data-action="rangePrev" title="向前扩展区间">${ICONS.chevronLeft}</div>
-          <div class="stcj-range-chip-main" data-action="editRange" title="修改当前区间">
-            <span class="stcj-range-chip-label">区间</span>
-            <span class="stcj-range-chip-value">-</span>
+      <div class="stcj-btn stcj-collapse" data-action="toggleCollapse"></div>
+      <div class="stcj-panel">
+        <div class="stcj-btn stcj-mini stcj-collapse stcj-panel-close" data-action="toggleCollapse" title="收起面板"></div>
+        <div class="stcj-btn" data-action="recent3" title="最近第3楼（跳到头部）">${ICONS.num(3)}</div>
+        <div class="stcj-btn" data-action="recent2" title="最近第2楼（跳到头部）">${ICONS.num(2)}</div>
+        <div class="stcj-btn" data-action="recent1" title="最近第1楼（跳到头部）">${ICONS.num(1)}</div>
+        <div class="stcj-btn" data-action="quickPage" title="快速翻页(右)：点击最新楼层的右翻页按钮">${ICONS.fastForward}</div>
+        <div class="stcj-btn" data-action="quickPageLeft" title="快速翻页(左)：点击最新楼层的左翻页按钮">${ICONS.fastBackward}</div>
+        <div class="stcj-btn" data-action="showRange" title="跳转/区间显示（输入楼层号或区间）">${ICONS.range}</div>
+        <div class="stcj-range-stack stcj-hidden" aria-hidden="true">
+          <div class="stcj-range-chip" aria-live="polite" aria-hidden="true">
+            <div class="stcj-btn stcj-mini stcj-range-nav" data-action="rangePrev" title="向前扩展区间">${ICONS.chevronLeft}</div>
+            <div class="stcj-range-chip-main" data-action="editRange" title="修改当前区间">
+              <span class="stcj-range-chip-label">区间</span>
+              <span class="stcj-range-chip-value">-</span>
+            </div>
+            <div class="stcj-btn stcj-mini stcj-range-nav" data-action="rangeNext" title="向后扩展区间">${ICONS.chevronRight}</div>
           </div>
-          <div class="stcj-btn stcj-mini stcj-range-nav" data-action="rangeNext" title="向后扩展区间">${ICONS.chevronRight}</div>
+          <div class="stcj-btn stcj-hidden stcj-range-reset-text" data-action="resetRange" title="恢复默认聊天视图">恢复</div>
         </div>
-        <div class="stcj-btn stcj-hidden stcj-range-reset-text" data-action="resetRange" title="恢复默认聊天视图">恢复</div>
-      </div>
-      <div class="stcj-btn stcj-toggle" data-action="toggleOrientation"></div>
-      <div class="stcj-btn" data-action="prev" title="上一楼（跳到头部）"></div>
-      <div class="stcj-btn" data-action="next" title="下一楼（跳到头部）"></div>
-      <div class="stcj-btn" data-action="currentHead" title="当前楼层：对齐到头部">${ICONS.head}</div>
-      <div class="stcj-btn" data-action="currentTail" title="当前楼层：对齐到尾部">${ICONS.tail}</div>
-      <div class="stcj-btn" data-action="quickEdit" title="快速编辑：选中文字可高亮定位；无选中则编辑当前楼层">${ICONS.pencil}</div>
+        <div class="stcj-btn stcj-toggle" data-action="toggleOrientation"></div>
+        <div class="stcj-btn" data-action="prev" title="上一楼（跳到头部）"></div>
+        <div class="stcj-btn" data-action="next" title="下一楼（跳到头部）"></div>
+        <div class="stcj-btn" data-action="currentHead" title="当前楼层：对齐到头部">${ICONS.head}</div>
+        <div class="stcj-btn" data-action="currentTail" title="当前楼层：对齐到尾部">${ICONS.tail}</div>
+        <div class="stcj-btn" data-action="quickEdit" title="快速编辑：选中文字可高亮定位；无选中则编辑当前楼层">${ICONS.pencil}</div>
 
-      <div class="stcj-pin-group">
-        <div class="stcj-btn stcj-pin" data-action="togglePin" title="收藏楼层：点选收藏">${ICONS.pin}</div>
-        <div class="stcj-btn stcj-favorites-manager" data-action="openFavoritesManager" title="打开收藏管理器">${ICONS.folder}</div>
-        <div class="stcj-btn stcj-pin-arrow" data-action="toggleFavPanel"></div>
+        <div class="stcj-pin-group">
+          <div class="stcj-btn stcj-pin" data-action="togglePin" title="收藏楼层：点选收藏">${ICONS.pin}</div>
+          <div class="stcj-btn stcj-favorites-manager" data-action="openFavoritesManager" title="打开收藏管理器">${ICONS.folder}</div>
+          <div class="stcj-btn stcj-pin-arrow" data-action="toggleFavPanel"></div>
+        </div>
       </div>
 
       <div class="stcj-fav-panel" aria-hidden="true">
@@ -5362,11 +5519,20 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     document.body.appendChild(root);
 
+    // 面板常驻 body 下（root 带 transform 会破坏 fixed 定位），逻辑上仍属于 root
+    const panelEl = root.querySelector('.stcj-panel');
+    if (panelEl) document.body.appendChild(panelEl);
+
     // 初始布局
     root.style.setProperty('--stcj-scale', String(normalizeRootScale(settings.scale)));
     root.classList.toggle('stcj-horizontal', settings.orientation === 'horizontal');
     root.classList.toggle('stcj-vertical', settings.orientation === 'vertical');
-    root.classList.toggle('stcj-collapsed', !!settings.collapsed);
+    // 新版交互：悬浮球是唯一形态。旧版"常驻长条"（collapsed=false）统一归一为悬浮球。
+    if (!settings.collapsed) {
+      settings.collapsed = true;
+      saveSettings();
+    }
+    root.classList.add('stcj-collapsed');
     updateOrientationToggleButton(root);
     updateCollapseToggleButton(root);
     updatePrevNextButtons(root);
@@ -5485,6 +5651,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       }
 
       try {
+        getBallPanel(root)?.remove();
         root.remove();
       } catch {
         /* ignore */

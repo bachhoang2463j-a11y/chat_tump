@@ -178,6 +178,131 @@
   display: none;
 }
 
+/* ===== 迷你悬浮球收起态（可被悬浮球收纳捕获：fixed + 44px + 1:1） ===== */
+#stcj-root.stcj-collapsed {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+}
+
+#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(30, 30, 30, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  transition:
+    transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.95;
+}
+
+#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse:hover {
+  transform: scale(1.08);
+  background: rgba(48, 48, 48, 0.92);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+#stcj-root.stcj-collapsed .stcj-btn.stcj-collapse:active {
+  transform: scale(0.94);
+}
+
+/* ===== 展开面板：fixed 定位在悬浮球左侧，不影响球本身尺寸/位置 =====
+   面板展开时会移到 body 下（root 带 transform，会破坏 fixed 定位），
+   因此用全局 .stcj-panel 选择器 + JS 同步的形态 class。 */
+#stcj-root:not(.stcj-collapsed) > .stcj-btn.stcj-collapse {
+  display: none;
+}
+
+.stcj-panel {
+  position: fixed;
+  z-index: 999998;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  transform-origin: right center;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.stcj-panel.stcj-panel-horizontal {
+  flex-direction: row;
+  align-items: center;
+  transform-origin: center bottom;
+  max-height: none;
+  max-width: calc(100vw - 24px);
+}
+
+.stcj-panel.stcj-panel-open {
+  display: flex;
+  animation: stcjPanelPop 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* 面板内按钮始终可见（面板自身控制 display） */
+.stcj-panel .stcj-btn,
+.stcj-panel .stcj-pin-group .stcj-btn {
+  display: grid;
+}
+
+.stcj-panel .stcj-pin-group {
+  display: flex;
+}
+
+/* 面板顶部的收起按钮 */
+.stcj-panel .stcj-btn.stcj-collapse {
+  display: grid;
+  position: static;
+  width: 28px;
+  height: 28px;
+}
+
+.stcj-panel .stcj-btn.stcj-collapse svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 展开态弹出动画 */
+@keyframes stcjPanelPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
 /* 交互状态 */
 #stcj-root .stcj-btn:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -633,11 +758,11 @@
   color: #ff5252;
 }
 
-/* 收起状态只显示收起按钮 */
-#stcj-root.stcj-collapsed .stcj-btn:not(.stcj-collapse) {
+/* 收起状态只显示悬浮球（按钮在 .stcj-panel 内，由面板自身控制显隐） */
+#stcj-root.stcj-collapsed > .stcj-btn:not(.stcj-collapse),
+#stcj-root.stcj-collapsed > .stcj-pin-group {
   display: none;
 }
-
 /* 移动端适配 */
 @media (max-width: 768px) {
   #stcj-root .stcj-btn {
@@ -701,8 +826,9 @@ body.stcj-pin-mode #stcj-root .stcj-btn.stcj-pin {
   cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>') 12 24, pointer;
 }
 
-/* ===== 按钮可见性控制（设置面板） ===== */
-#stcj-root .stcj-settings-hidden {
+/* ===== 按钮可见性控制（设置面板）；面板在 body 下，需同时覆盖全局 ===== */
+#stcj-root .stcj-settings-hidden,
+.stcj-panel .stcj-settings-hidden {
   display: none !important;
 }
 
