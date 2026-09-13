@@ -977,12 +977,13 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     }
   }
 
-  function getQuickEditButton(root) {
-    return root?.querySelector?.('.stcj-btn[data-action="quickEdit"]') || null;
+  function getQuickEditButton() {
+    // quickEdit 按钮在面板内，面板直挂 body，需全局查询
+    return document.querySelector('.stcj-btn[data-action="quickEdit"]');
   }
 
   function updateQuickEditButton(root) {
-    const btn = getQuickEditButton(root);
+    const btn = getQuickEditButton();
     if (!btn) return;
     const editing = !!quickEditState && isElementVisible(document.querySelector(QUICK_EDIT.EDIT_TEXTAREA_SELECTOR));
     setIcon(btn, editing ? 'check' : 'pencil');
@@ -1670,6 +1671,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
       const root = document.getElementById(ROOT_ID);
       if (root && root.contains(e.target)) return;
+      if (document.querySelector('.stcj-panel')?.contains(e.target)) return;
 
       const mesEl = document.querySelector(`#chat .mes[mesid="${quickEditState.mesId}"]`);
       if (mesEl && mesEl.contains(e.target)) return;
@@ -1866,19 +1868,21 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateRangeButtons(root) {
-    const rangeBtn = root.querySelector('.stcj-btn[data-action="showRange"]');
-    const resetBtn = root.querySelector('.stcj-btn[data-action="resetRange"]');
-    const editBtn = root.querySelector('.stcj-range-chip-main[data-action="editRange"]');
-    const rangePrevBtn = root.querySelector('.stcj-btn[data-action="rangePrev"]');
-    const rangeNextBtn = root.querySelector('.stcj-btn[data-action="rangeNext"]');
-    const rangeStack = root.querySelector('.stcj-range-stack');
-    const rangeChip = root.querySelector('.stcj-range-chip');
-    const rangeLabel = root.querySelector('.stcj-range-chip-label');
-    const rangeValue = root.querySelector('.stcj-range-chip-value');
+    // 区间按钮/指示条都在面板内，面板直挂 body，需全局查询
+    const rangeBtn = document.querySelector('.stcj-btn[data-action="showRange"]');
+    const resetBtn = document.querySelector('.stcj-btn[data-action="resetRange"]');
+    const editBtn = document.querySelector('.stcj-range-chip-main[data-action="editRange"]');
+    const rangePrevBtn = document.querySelector('.stcj-btn[data-action="rangePrev"]');
+    const rangeNextBtn = document.querySelector('.stcj-btn[data-action="rangeNext"]');
+    const rangeStack = document.querySelector('.stcj-range-stack');
+    const rangeChip = document.querySelector('.stcj-range-chip');
+    const rangeLabel = document.querySelector('.stcj-range-chip-label');
+    const rangeValue = document.querySelector('.stcj-range-chip-value');
     const isActive = !!activeRange;
     const currentText = formatRangeText(activeRange);
 
     root.classList.toggle('stcj-range-active', isActive);
+    document.querySelector('.stcj-panel')?.classList.toggle('stcj-range-active', isActive);
 
     if (rangeChip) {
       rangeChip.classList.toggle('stcj-show', isActive);
@@ -2346,7 +2350,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateOrientationToggleButton(root) {
-    const btn = root.querySelector('.stcj-btn[data-action="toggleOrientation"]');
+    const btn = document.querySelector('.stcj-btn[data-action="toggleOrientation"]');
     if (!btn) return;
 
     const isHorizontal = settings.orientation === 'horizontal';
@@ -2355,7 +2359,8 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateCollapseToggleButton(root) {
-    const btns = root.querySelectorAll('.stcj-btn[data-action="toggleCollapse"]');
+    // 球在 root 内、面板关闭钮直挂 body，全局查询覆盖两处
+    const btns = document.querySelectorAll('.stcj-btn[data-action="toggleCollapse"]');
 
     btns.forEach((btn) => {
       // 面板内的收起按钮：显示关闭图标
@@ -2371,8 +2376,8 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updatePrevNextButtons(root) {
-    const prev = root.querySelector('.stcj-btn[data-action="prev"]');
-    const next = root.querySelector('.stcj-btn[data-action="next"]');
+    const prev = document.querySelector('.stcj-btn[data-action="prev"]');
+    const next = document.querySelector('.stcj-btn[data-action="next"]');
     if (!prev || !next) return;
 
     const isVertical = settings.orientation === 'vertical';
@@ -2381,7 +2386,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateFavPanelToggleButton(root) {
-    const btn = root.querySelector('.stcj-btn[data-action="toggleFavPanel"]');
+    const btn = document.querySelector('.stcj-btn[data-action="toggleFavPanel"]');
     if (!btn) return;
 
     setIcon(btn, favPanelOpen ? 'chevronDown' : 'chevronRight');
@@ -4118,7 +4123,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateFavoritesUI(root) {
-    const managerBtn = root.querySelector('.stcj-btn.stcj-favorites-manager');
+    const managerBtn = document.querySelector('.stcj-btn.stcj-favorites-manager');
     if (managerBtn) managerBtn.setAttribute('data-count', String(favoriteItems.length));
 
     root.classList.toggle('stcj-fav-open', favPanelOpen);
@@ -4287,7 +4292,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     const root = document.getElementById(ROOT_ID);
     if (root) {
-      const pinBtn = root.querySelector('.stcj-btn.stcj-pin');
+      const pinBtn = document.querySelector('.stcj-btn.stcj-pin');
       pinBtn?.classList.toggle('stcj-pin-active', pinMode);
       updateFavoritesUI(root);
     }
@@ -4309,12 +4314,15 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   function bindRootOutsideClose(root) {
     const onPointerDown = (e) => {
       if (root.contains(e.target)) return;
+      const panel = document.querySelector('.stcj-panel');
+      if (panel && panel.contains(e.target)) return;
       if (document.getElementById(FAVORITES_MODAL_ID)?.contains(e.target)) return;
       if (document.getElementById(FAVORITE_QUICK_MENU_OVERLAY_ID)?.contains(e.target)) return;
       closeFavoriteQuickMenu();
       // 面板展开时，点击外部收回面板
       if (root.classList.contains('stcj-expanded')) {
         root.classList.remove('stcj-expanded');
+        panel?.classList.remove('stcj-expanded');
         updateCollapseToggleButton(root);
       }
     };
@@ -4638,6 +4646,12 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       resizeRaf = requestAnimationFrame(() => {
         resizeRaf = null;
 
+        // 面板展开时按新视口高度重算垂直位置
+        const panelEl = document.querySelector('.stcj-panel');
+        if (panelEl && panelEl.classList.contains('stcj-expanded')) {
+          centerBallPanelVertically(root);
+        }
+
         // 有相对位置时：按相对位置重新计算，保证窗口变化后仍保持相对位置
         if (typeof settings.rx === 'number' && typeof settings.ry === 'number') {
           const { maxLeft, maxTop } = getRootMaxOffsets(root);
@@ -4715,6 +4729,10 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     root.classList.toggle('stcj-horizontal', orientation === 'horizontal');
     root.classList.toggle('stcj-vertical', orientation === 'vertical');
+    // 面板直挂 body，方向类需同步到面板自身
+    const panel = document.querySelector('.stcj-panel');
+    panel?.classList.toggle('stcj-horizontal', orientation === 'horizontal');
+    panel?.classList.toggle('stcj-vertical', orientation === 'vertical');
 
     updateOrientationToggleButton(root);
     updatePrevNextButtons(root);
@@ -4764,7 +4782,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
    * WebView 对 fixed 元素的这两种居中方式解析异常（面板会跑出视口）。
    */
   function centerBallPanelVertically(root) {
-    const panel = root.querySelector('.stcj-panel');
+    const panel = document.querySelector('.stcj-panel');
     if (!panel) return;
 
     const vh = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -4783,9 +4801,10 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     // 悬浮球形态：点击球 = 从屏幕右缘弹出/收回完整按钮面板
     if (settings.collapsed) {
-      root.classList.toggle('stcj-expanded');
+      const expanded = root.classList.toggle('stcj-expanded');
+      document.querySelector('.stcj-panel')?.classList.toggle('stcj-expanded', expanded);
       updateCollapseToggleButton(root);
-      if (root.classList.contains('stcj-expanded')) {
+      if (expanded) {
         centerBallPanelVertically(root);
       } else {
         closeFavPanel();
@@ -4834,6 +4853,8 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       root.classList.toggle('stcj-global-hidden', globalHidden);
       if (!globalHidden) applyRootScale(root);
     }
+    // 面板直挂 body，隐藏状态需同步
+    document.querySelector('.stcj-panel')?.classList.toggle('stcj-global-hidden', globalHidden);
 
     // 更新设置面板中的按钮文本
     const btn = document.getElementById('stcj-global-hide-btn');
@@ -5045,7 +5066,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
 
     // 1) 应用可见性
     for (const [btnId, selector] of Object.entries(BUTTON_DOM_MAP)) {
-      const el = root.querySelector(selector);
+      const el = document.querySelector(selector);
       if (!el) continue;
       const cfg = cfgMap.get(btnId);
       const enabled = cfg ? cfg.enabled : true;
@@ -5054,14 +5075,14 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       // showRange 同时控制关联元素
       if (btnId === 'showRange') {
         for (const extraSel of RANGE_GROUP_EXTRA) {
-          const extraEl = root.querySelector(extraSel);
+          const extraEl = document.querySelector(extraSel);
           if (extraEl) extraEl.classList.toggle('stcj-settings-hidden', !enabled);
         }
       }
     }
 
-    // 2) 按 order 排序：收集所有可排序的元素（按钮都在 .stcj-panel 内）
-    const panel = root.querySelector('.stcj-panel') || root;
+    // 2) 按 order 排序：收集所有可排序的元素（按钮都在 .stcj-panel 内，面板直挂 body）
+    const panel = document.querySelector('.stcj-panel');
     const favPanel = root.querySelector('.stcj-fav-panel');
 
     // 获取排序后的按钮 ID 列表
@@ -5360,7 +5381,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     const root = document.createElement('div');
     root.id = ROOT_ID;
     root.title = '点击展开跳转面板，长按可拖动位置';
-    root.className = `stcj-root stcj-${settings.orientation}`;
+    root.className = `stcj-root stcj-scope stcj-${settings.orientation}`;
 
     root.innerHTML = `
       <div class="stcj-btn stcj-mini stcj-collapse" data-action="toggleCollapse"></div>
@@ -5435,6 +5456,18 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     bindButtons(root);
     bindFavoritesPanel(root);
     attachFavoritePanelDrag(root);
+
+    // 面板常驻 body：悬浮球收纳类插件会把整个 root 搬进带 transform 的
+    // 容器（transform 祖先会成为 fixed 后代的包含块），面板留在 root 内时
+    // 其 fixed 定位会相对收纳栏而非视口解析。绑定完成后移出，监听器随元素走。
+    const panelEl = root.querySelector('.stcj-panel');
+    if (panelEl) {
+      panelEl.classList.add('stcj-scope');
+      panelEl.classList.toggle('stcj-horizontal', settings.orientation === 'horizontal');
+      panelEl.classList.toggle('stcj-vertical', settings.orientation === 'vertical');
+      document.body.appendChild(panelEl);
+    }
+
     detachOutsideClose = bindRootOutsideClose(root);
 
     // 监听聊天切换，切换到对应聊天文件的永久收藏
@@ -5541,6 +5574,12 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       } catch {
         /* ignore */
       }
+
+      try {
+        document.querySelector('.stcj-panel')?.remove();
+      } catch {
+        /* ignore */
+      }
     };
 
     // 应用按钮可见性与排序
@@ -5550,6 +5589,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     globalHidden = loadGlobalHidden();
     favoritesPreviewMode = loadFavoritesPreviewMode();
     root.classList.toggle('stcj-global-hidden', globalHidden);
+    document.querySelector('.stcj-panel')?.classList.toggle('stcj-global-hidden', globalHidden);
 
     // 挂载扩展设置面板
     mountSettingsPanel();
