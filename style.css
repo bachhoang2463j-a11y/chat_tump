@@ -670,10 +670,7 @@
     0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
-/* 面板：原版按钮栏原样作为面板，fixed 于屏幕右缘中部，滑入/滑出。
-   面板展开时会挂到 body 直下（#stcj-ball-panel），避免球被"悬浮球收纳"
-   捕获后其容器污染 fixed 定位。选择器不依赖 #stcj-root 祖先。 */
-#stcj-ball-panel,
+/* 面板：原版按钮栏原样作为面板，fixed 于屏幕右缘中部，滑入/滑出 */
 #stcj-root .stcj-panel {
   position: fixed;
   right: 10px;
@@ -701,7 +698,6 @@
     opacity 0.22s ease;
 }
 
-#stcj-ball-panel.stcj-panel-horizontal,
 #stcj-root.stcj-horizontal .stcj-panel {
   flex-direction: row;
   max-height: none;
@@ -709,7 +705,6 @@
 }
 
 /* 面板展开：贴右缘滑入；面板内原版按钮全部可见 */
-#stcj-ball-panel.stcj-panel-open,
 #stcj-root.stcj-expanded .stcj-panel {
   display: flex;
   visibility: visible;
@@ -717,18 +712,15 @@
   opacity: 1;
 }
 
-#stcj-ball-panel.stcj-panel-open .stcj-btn:not(.stcj-collapse),
 #stcj-root.stcj-expanded .stcj-panel .stcj-btn:not(.stcj-collapse) {
   display: grid;
 }
 
-#stcj-ball-panel.stcj-panel-open .stcj-pin-group,
 #stcj-root.stcj-expanded .stcj-panel .stcj-pin-group {
   display: flex;
 }
 
 /* 面板顶部收起按钮 */
-#stcj-ball-panel > .stcj-btn.stcj-collapse,
 #stcj-root .stcj-panel > .stcj-btn.stcj-collapse {
   width: 28px;
   height: 28px;
@@ -798,10 +790,8 @@ body.stcj-pin-mode #stcj-root .stcj-btn.stcj-pin {
   cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>') 12 24, pointer;
 }
 
-/* ===== 按钮可见性控制（设置面板）；面板在 body 下，需同时覆盖全局 ===== */
-#stcj-root .stcj-settings-hidden,
-#stcj-ball-panel .stcj-settings-hidden,
-.stcj-panel .stcj-settings-hidden {
+/* ===== 按钮可见性控制（设置面板） ===== */
+#stcj-root .stcj-settings-hidden {
   display: none !important;
 }
 

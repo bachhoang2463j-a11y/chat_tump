@@ -2355,15 +2355,11 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   }
 
   function updateCollapseToggleButton(root) {
-    // 面板可能已挂 body 直下，两处都要查
-    const btns = [
-      ...root.querySelectorAll('.stcj-btn[data-action="toggleCollapse"]'),
-      ...(getBallPanel(root)?.querySelectorAll('.stcj-btn[data-action="toggleCollapse"]') ?? []),
-    ];
+    const btns = root.querySelectorAll('.stcj-btn[data-action="toggleCollapse"]');
 
     btns.forEach((btn) => {
       // 面板内的收起按钮：显示关闭图标
-      if (btn.closest('.stcj-panel') || btn.closest('#stcj-ball-panel')) {
+      if (btn.closest('.stcj-panel')) {
         setIcon(btn, 'close');
         btn.title = '收起面板';
         return;
@@ -4313,16 +4309,12 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
   function bindRootOutsideClose(root) {
     const onPointerDown = (e) => {
       if (root.contains(e.target)) return;
-      // 面板可能已挂到 body 直下，点面板内不算外部
-      const ballPanel = getBallPanel(root);
-      if (ballPanel?.contains(e.target)) return;
       if (document.getElementById(FAVORITES_MODAL_ID)?.contains(e.target)) return;
       if (document.getElementById(FAVORITE_QUICK_MENU_OVERLAY_ID)?.contains(e.target)) return;
       closeFavoriteQuickMenu();
       // 面板展开时，点击外部收回面板
       if (root.classList.contains('stcj-expanded')) {
         root.classList.remove('stcj-expanded');
-        ballPanel?.classList.remove('stcj-panel-open');
         updateCollapseToggleButton(root);
       }
     };
@@ -4772,7 +4764,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
    * WebView 对 fixed 元素的这两种居中方式解析异常（面板会跑出视口）。
    */
   function centerBallPanelVertically(root) {
-    const panel = getBallPanel(root);
+    const panel = root.querySelector('.stcj-panel');
     if (!panel) return;
 
     const vh = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -4785,52 +4777,19 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     panel.style.top = `${top}px`;
   }
 
-  /**
-   * 取弹出面板 DOM。球被"悬浮球收纳"类脚本捕获后，root 会被移进
-   * 收纳面板容器（fixed 且可能带布局约束），面板留在 root 内的话
-   * fixed 定位会被污染（表现为"在收纳栏原地展开"）。
-   * 因此展开时把面板挂到 body 直下，保证相对视口定位。
-   */
-  function getBallPanel(root) {
-    return document.getElementById('stcj-ball-panel') || root.querySelector('.stcj-panel');
-  }
-
-  function ensurePanelInBody(root) {
-    let panel = root.querySelector('.stcj-panel');
-    if (!panel) panel = document.getElementById('stcj-ball-panel');
-    if (!panel) return null;
-    if (panel.parentNode !== document.body) {
-      // 挂到 body 直下，给稳定 id（CSS 用 #stcj-ball-panel 全局规则）
-      panel.id = 'stcj-ball-panel';
-      document.body.appendChild(panel);
-    }
-    // 同步布局形态（root 的方向 class 面板自身不再继承）
-    panel.classList.toggle('stcj-panel-horizontal', root.classList.contains('stcj-horizontal'));
-    return panel;
-  }
-
   function toggleCollapse() {
     const root = document.getElementById(ROOT_ID);
     if (!root) return;
 
     // 悬浮球形态：点击球 = 从屏幕右缘弹出/收回完整按钮面板
     if (settings.collapsed) {
-      const expanded = !root.classList.contains('stcj-expanded');
-      root.classList.toggle('stcj-expanded', expanded);
-
-      let panel = null;
-      if (expanded) {
-        // 面板挂到 body 直下：球即使被"悬浮球收纳"移进它的容器，
-        // 面板仍相对视口定位，固定出现在屏幕右侧
-        panel = ensurePanelInBody(root);
-        panel?.classList.add('stcj-panel-open');
-        if (panel) centerBallPanelVertically(root);
+      root.classList.toggle('stcj-expanded');
+      updateCollapseToggleButton(root);
+      if (root.classList.contains('stcj-expanded')) {
+        centerBallPanelVertically(root);
       } else {
-        panel = getBallPanel(root);
-        panel?.classList.remove('stcj-panel-open');
         closeFavPanel();
       }
-      updateCollapseToggleButton(root);
       return;
     }
 
@@ -5102,7 +5061,7 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
     }
 
     // 2) 按 order 排序：收集所有可排序的元素（按钮都在 .stcj-panel 内）
-    const panel = getBallPanel(root) || root;
+    const panel = root.querySelector('.stcj-panel') || root;
     const favPanel = root.querySelector('.stcj-fav-panel');
 
     // 获取排序后的按钮 ID 列表
@@ -5578,7 +5537,6 @@ import { messageFormatting as coreMessageFormatting } from '../../../../script.j
       }
 
       try {
-        document.getElementById('stcj-ball-panel')?.remove();
         root.remove();
       } catch {
         /* ignore */
